@@ -1,10 +1,18 @@
 import tkinter as tk
 import time
+import serial
+# import database_python as db
+# import arduino_python as ap
+# import arduino_keypad as ak
+import accountshi as acc
+import threading
+import hashlib
 
 
 class SampleApp(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+        self.title('ABN-MANBRO')
         self._frame = None
         self.switch_frame(StartPage)
         self.geometry('1920x1080')
@@ -38,6 +46,29 @@ class SampleApp(tk.Tk):
 
         clock()
 
+    def checkRFID(self):
+        acc.rfid()
+        self.switch_frame(PageOne)
+
+    def KeypadWithdraw(self):
+        ser = serial.Serial("COM3", 9600, timeout=1)
+        while True:
+            keypad = ser.read()
+            keypad = keypad.decode()
+            if keypad:
+                if keypad == 'A':
+                    self.switch_frame(PageThree)
+                if keypad == 'B':
+                    self.switch_frame(PageFour)
+                if keypad == 'C':
+                    self.switch_frame(PageSix)
+                print(keypad)
+                return
+
+    def KeypadPincode(self):
+        if acc.keypad():
+            self.switch_frame(PageTwo)
+
 
 # start page
 class StartPage(tk.Frame):
@@ -52,7 +83,8 @@ class StartPage(tk.Frame):
                             command=lambda: master.switch_frame(PageOne))
         button1.pack()
 
-        master.clockLabel()
+        self.x = threading.Thread(target=master.checkRFID)
+        self.x.start()
 
 
 # pincode-check
@@ -67,6 +99,9 @@ class PageOne(tk.Frame):
         tk.Button(self, text="Page 2",
                   command=lambda: master.switch_frame(PageTwo)).pack()
 
+        self.x = threading.Thread(target=master.KeypadPincode)
+        self.x.start()
+
 
 # option page
 class PageTwo(tk.Frame):
@@ -79,7 +114,7 @@ class PageTwo(tk.Frame):
 
         button = tk.Button(self, text="Go to the start page", command=lambda: master.switch_frame(StartPage))
 
-        self.wd = tk.PhotoImage(file='images/knoppreset.png')
+        self.wd = tk.PhotoImage(file='images/withdrawknop.png')
         withdrawButton = tk.Button(self, image=self.wd, borderwidth=0,
                                    command=lambda: master.switch_frame(PageThree))
 
@@ -97,6 +132,9 @@ class PageTwo(tk.Frame):
         balButton.place(x=1400, y=640)
         fastButton.place(x=1400, y=780)
         abortButton.place(x=80, y=780)
+
+        self.x = threading.Thread(target=master.KeypadWithdraw)
+        self.x.start()
 
 
 # withdraw page
@@ -151,6 +189,12 @@ class PageFour(tk.Frame):
         self.bg_image = tk.PhotoImage(file='images/Saldo-scherm.png')
         self.bg_label = tk.Label(self, image=self.bg_image)
         self.bg_label.place(x=0, y=0)
+
+        # self.balance = db.getBalance()
+        # balanceBox = tk.Entry(self, textvariable=self.balance, font=('Century Gothic', 30, 'bold'), fg='black')
+        # balanceBox.insert("end", self.balance)
+        # balanceBox.config(state='readonly')
+
         button = tk.Button(self, text="Go to the start page", command=lambda: master.switch_frame(StartPage))
 
         self.abort = tk.PhotoImage(file='images/abort knop.png')
@@ -159,6 +203,7 @@ class PageFour(tk.Frame):
         self.hs = tk.PhotoImage(file='images/homescreenknop.png')
         hsButton = tk.Button(self, image=self.hs, command=lambda: master.switch_frame(PageTwo), borderwidth=0)
 
+        # balanceBox.place(x=1100, y=500)
         button.pack()
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
@@ -184,7 +229,6 @@ class PageFive(tk.Frame):
 
         inputbox = tk.Entry(self, font="CenturyGothic 30 bold")
 
-        self.enterImg = tk.PhotoImage(file='images/legeknop.png')
         enterButton = tk.Button(self, text="Enter", font="CenturyGothic 30 bold", command=None, borderwidth=0)
 
         button.pack()
@@ -213,7 +257,8 @@ class PageSix(tk.Frame):
         self.hs = tk.PhotoImage(file='images/homescreenknop.png')
         hsButton = tk.Button(self, image=self.hs, command=lambda: master.switch_frame(PageTwo), borderwidth=0)
 
-        testButton = tk.Button(self, text="Ga naar het bonnetjes scherm", command=lambda: master.switch_frame(PageSeven))
+        testButton = tk.Button(self, text="Ga naar het bonnetjes scherm",
+                               command=lambda: master.switch_frame(PageSeven))
 
         button.pack()
         testButton.pack()
