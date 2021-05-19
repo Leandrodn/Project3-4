@@ -6,7 +6,6 @@ import serial
 # import arduino_keypad as ak
 import accountshi as acc
 import threading
-import hashlib
 
 
 class SampleApp(tk.Tk):
@@ -51,9 +50,8 @@ class SampleApp(tk.Tk):
         self.switch_frame(PageOne)
 
     def KeypadWithdraw(self):
-        ser = serial.Serial("COM3", 9600, timeout=1)
         while True:
-            keypad = ser.read()
+            keypad = acc.arduino2.read()
             keypad = keypad.decode()
             if keypad:
                 if keypad == 'A':
@@ -68,6 +66,10 @@ class SampleApp(tk.Tk):
     def KeypadPincode(self):
         if acc.keypad():
             self.switch_frame(PageTwo)
+
+    def customAmount(self):
+        acc.amountKeypad()
+        self.switch_frame(PageSix)
 
 
 # start page
@@ -227,16 +229,16 @@ class PageFive(tk.Frame):
         self.hs = tk.PhotoImage(file='images/homescreenknop.png')
         hsButton = tk.Button(self, image=self.hs, command=lambda: master.switch_frame(PageTwo), borderwidth=0)
 
-        inputbox = tk.Entry(self, font="CenturyGothic 30 bold")
-
-        enterButton = tk.Button(self, text="Enter", font="CenturyGothic 30 bold", command=None, borderwidth=0)
+        enterButton = tk.Button(self, text="Enter [A]", font="CenturyGothic 30 bold", command=None, borderwidth=0)
 
         button.pack()
-        inputbox.place(x=730, y=640, width=500, height=100)
-        enterButton.place(x=800, y=800)
+        enterButton.place(x=850, y=800)
 
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
+
+        self.x = threading.Thread(target=master.customAmount)
+        self.x.start()
 
 
 # Choice of bills

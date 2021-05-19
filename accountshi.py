@@ -5,6 +5,7 @@ import tkinter as tk
 
 database = mysql.connector.connect(host="remotemysql.com", user="5J9rC1RF8E", passwd="U8IIWXIJZT", db="5J9rC1RF8E")
 cursor = database.cursor()
+arduino2 = serial.Serial('COM3', 9600, timeout=.1)
 
 
 def rfid():
@@ -29,7 +30,6 @@ def keypad():
     print(SQLpincode[0])
     print('Voer uw pincode in')
 
-    arduino2 = serial.Serial('COM3', 9600, timeout=.1)
     pincodeList = []
     noOfTries = 0
 
@@ -39,7 +39,7 @@ def keypad():
     cardState = cardStateList[0]
 
     pincodeBox = tk.Entry(text='test', font=('Century Gothic', 30, 'bold'), fg='black')
-    pincodeBox.place(x=650, y=600)
+    pincodeBox.place(x=730, y=640)
     if cardState[0] == 1:
         while True:
             keypad = arduino2.read()
@@ -82,6 +82,28 @@ def keypad():
         print("uw pas is geblokkerd, neem contact op met de database meneer")
 
 
+def amountKeypad():
+    global amount
+
+    amountBox = tk.Entry(text='test', font=('Century Gothic', 30, 'bold'), fg='black')
+    amountBox.place(x=730, y=640)
+    amountList = []
+
+    amountBox.delete(0, 'end')
+    while True:
+        keypad = arduino2.read()
+        keypad = keypad.decode()
+        if keypad:
+            if keypad == 'A':
+                amountList.append(keypad)
+                amount = ''.join(amountList)
+                return
+            else:
+                amountBox.insert('end', keypad)
+                amountList.append(keypad)
+
+
 if __name__ == "__main__":
     rfid()
     keypad()
+    amountKeypad()
