@@ -5,6 +5,7 @@ import tkinter as tk
 
 database = mysql.connector.connect(host="remotemysql.com", user="5J9rC1RF8E", passwd="U8IIWXIJZT", db="5J9rC1RF8E")
 cursor = database.cursor()
+arduino2 = serial.Serial('COM3', 9600, timeout=.1)
 
 
 def rfid():
@@ -29,7 +30,6 @@ def keypad():
     print(SQLpincode[0])
     print('Voer uw pincode in')
 
-    arduino2 = serial.Serial('COM3', 9600, timeout=.1)
     pincodeList = []
     noOfTries = 0
 
@@ -39,7 +39,7 @@ def keypad():
     cardState = cardStateList[0]
 
     pincodeBox = tk.Entry(text='test', font=('Century Gothic', 30, 'bold'), fg='black')
-    pincodeBox.place(x=650, y=600)
+    pincodeBox.place(x=730, y=640)
     if cardState[0] == 1:
         while True:
             keypad = arduino2.read()
@@ -82,6 +82,48 @@ def keypad():
         print("uw pas is geblokkerd, neem contact op met de database meneer")
 
 
+def amountKeypad():
+    global amount
+
+    amountBox = tk.Entry(text='test', font=('Century Gothic', 30, 'bold'), fg='black')
+    amountBox.place(x=730, y=640)
+    amountList = []
+    amountBox.delete(0, 'end')
+    numbers = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'}
+    while True:
+        keypad = arduino2.read()
+        keypad = keypad.decode()
+        if keypad:
+            if keypad == 'A':
+                amount = ''.join(amountList)
+                print(amount)
+                amount = round(int(amount), -1)
+                return 0
+            elif keypad == '*':
+                return 1
+            elif keypad == '#':
+                return 2
+            elif keypad in numbers:
+                amountBox.insert('end', keypad)
+                amountList.append(keypad)
+
+
+def bills():
+    global notes
+
+    if amount % 10 == 0:
+        notes50 = amount // 50
+        notes20 = ((amount - (notes50 * 50)) // 20)
+        notes10 = ((amount - (notes50 * 50) - (notes20 * 20)) // 10)
+        print("briefjes van 50 ", notes50)
+        print("briefjes van 20 ", notes20)
+        print("briefjes van 10 ", notes10)
+        notes = f"{notes50}x 50,-, {notes20}x 20,-, {notes10}x 10,- [A]"
+    else:
+        print("kan niet")
+
+
 if __name__ == "__main__":
     rfid()
     keypad()
+    amountKeypad()

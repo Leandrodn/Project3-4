@@ -1,12 +1,8 @@
 import tkinter as tk
 import time
 import serial
-# import database_python as db
-# import arduino_python as ap
-# import arduino_keypad as ak
 import accountshi as acc
 import threading
-import hashlib
 
 
 class SampleApp(tk.Tk):
@@ -50,10 +46,9 @@ class SampleApp(tk.Tk):
         acc.rfid()
         self.switch_frame(PageOne)
 
-    def KeypadWithdraw(self):
-        ser = serial.Serial("COM3", 9600, timeout=1)
+    def KeypadOption(self):
         while True:
-            keypad = ser.read()
+            keypad = acc.arduino2.read()
             keypad = keypad.decode()
             if keypad:
                 if keypad == 'A':
@@ -62,11 +57,83 @@ class SampleApp(tk.Tk):
                     self.switch_frame(PageFour)
                 if keypad == 'C':
                     self.switch_frame(PageSix)
+                if keypad == '*':
+                    self.switch_frame(PageEight)
+                print(keypad)
+                return
+
+    def KeypadWithdraw(self):
+        while True:
+            keypad = acc.arduino2.read()
+            keypad = keypad.decode()
+            if keypad:
+                if keypad == 'A':
+                    acc.amount = 10
+                    self.switch_frame(PageSix)
+                if keypad == 'B':
+                    acc.amount = 20
+                    self.switch_frame(PageSix)
+                if keypad == 'C':
+                    acc.amount = 30
+                    self.switch_frame(PageSix)
+                if keypad == 'D':
+                    self.switch_frame(PageFive)
+                if keypad == '*':
+                    self.switch_frame(PageEight)
+                if keypad == '#':
+                    self.switch_frame(PageTwo)
+                print(keypad)
+                return
+
+    def KeypadBalance(self):
+        while True:
+            keypad = acc.arduino2.read()
+            keypad = keypad.decode()
+            if keypad:
+                if keypad == '*':
+                    self.switch_frame(PageEight)
+                if keypad == '#':
+                    self.switch_frame(PageTwo)
+                print(keypad)
+                return
+
+    def KeypadBills(self):
+        while True:
+            keypad = acc.arduino2.read()
+            keypad = keypad.decode()
+            if keypad:
+                if keypad == 'A':
+                    self.switch_frame(PageEight)
+                if keypad == '*':
+                    self.switch_frame(PageEight)
+                if keypad == '#':
+                    self.switch_frame(PageTwo)
+                print(keypad)
+                return
+
+    def KeypadReceipt(self):
+        while True:
+            keypad = acc.arduino2.read()
+            keypad = keypad.decode()
+            if keypad:
+                if keypad == '*':
+                    self.switch_frame(PageEight)
+                if keypad == '#':
+                    self.switch_frame(PageTwo)
                 print(keypad)
                 return
 
     def KeypadPincode(self):
         if acc.keypad():
+            self.switch_frame(PageTwo)
+
+    def customAmount(self):
+        page = acc.amountKeypad()
+        if page == 0:
+            self.switch_frame(PageSix)
+        if page == 1:
+            self.switch_frame(PageEight)
+        if page == 2:
             self.switch_frame(PageTwo)
 
 
@@ -122,7 +189,7 @@ class PageTwo(tk.Frame):
         balButton = tk.Button(self, image=self.bal, command=lambda: master.switch_frame(PageFour), borderwidth=0)
 
         self.fast = tk.PhotoImage(file='images/fast70knop.png')
-        fastButton = tk.Button(self, image=self.fast, command=None, borderwidth=0)
+        fastButton = tk.Button(self, image=self.fast, command=lambda: master.switch_frame(PageSix), borderwidth=0)
 
         self.abort = tk.PhotoImage(file='images/abort knop.png')
         abortButton = tk.Button(self, image=self.abort, command=lambda: master.switch_frame(PageEight), borderwidth=0)
@@ -133,7 +200,7 @@ class PageTwo(tk.Frame):
         fastButton.place(x=1400, y=780)
         abortButton.place(x=80, y=780)
 
-        self.x = threading.Thread(target=master.KeypadWithdraw)
+        self.x = threading.Thread(target=master.KeypadOption)
         self.x.start()
 
 
@@ -179,6 +246,9 @@ class PageThree(tk.Frame):
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
 
+        self.x = threading.Thread(target=master.KeypadWithdraw)
+        self.x.start()
+
 
 # Balance page
 class PageFour(tk.Frame):
@@ -208,6 +278,9 @@ class PageFour(tk.Frame):
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
 
+        self.x = threading.Thread(target=master.KeypadBalance)
+        self.x.start()
+
 
 # custom amount page
 class PageFive(tk.Frame):
@@ -227,16 +300,17 @@ class PageFive(tk.Frame):
         self.hs = tk.PhotoImage(file='images/homescreenknop.png')
         hsButton = tk.Button(self, image=self.hs, command=lambda: master.switch_frame(PageTwo), borderwidth=0)
 
-        inputbox = tk.Entry(self, font="CenturyGothic 30 bold")
-
-        enterButton = tk.Button(self, text="Enter", font="CenturyGothic 30 bold", command=None, borderwidth=0)
+        enterButton = tk.Button(self, text="Enter [A]", font="CenturyGothic 30 bold",
+                                command=lambda: master.switch_frame(PageSix), borderwidth=0)
 
         button.pack()
-        inputbox.place(x=730, y=640, width=500, height=100)
-        enterButton.place(x=800, y=800)
+        enterButton.place(x=850, y=800)
 
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
+
+        self.x = threading.Thread(target=master.customAmount)
+        self.x.start()
 
 
 # Choice of bills
@@ -260,10 +334,19 @@ class PageSix(tk.Frame):
         testButton = tk.Button(self, text="Ga naar het bonnetjes scherm",
                                command=lambda: master.switch_frame(PageSeven))
 
+        acc.bills()
+
+        notesButton = tk.Button(self, text=acc.notes, font="CenturyGothic 34 bold", command=None, borderwidth=5,
+                                bg='#009D96', fg='white', highlightbackground="white")
+        notesButton.place(x=1200, y=640)
+
         button.pack()
         testButton.pack()
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
+
+        self.x = threading.Thread(target=master.KeypadBills)
+        self.x.start()
 
 
 # Receipt screen
@@ -290,11 +373,18 @@ class PageSeven(tk.Frame):
         self.no = tk.PhotoImage(file='images/noknop.png')
         noButton = tk.Button(self, image=self.no, command=lambda: master.switch_frame(PageEight), borderwidth=0)
 
+        self.online = tk.PhotoImage(file='images/onlineknop.png')
+        onlineButton = tk.Button(self, image=self.no, command=lambda: master.switch_frame(PageEight), borderwidth=0)
+
         button.pack()
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
-        yesButton.place(x=1400, y=640)
-        noButton.place(x=1400, y=780)
+        yesButton.place(x=1400, y=500)
+        noButton.place(x=1400, y=640)
+        onlineButton.place(x=1400, y=780)
+
+        self.x = threading.Thread(target=master.KeypadWithdraw)
+        self.x.start()
 
 
 # Endscreen
