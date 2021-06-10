@@ -17,8 +17,14 @@ from datetime import datetime
 global charityChoice
 
 amount = 0
-arduino2 = serial.Serial('COM3', 9600, writeTimeout=0)
+arduino2 = serial.Serial('COM3', 9600, timeout=.1)
 arduino3 = serial.Serial('COM4', 9600, writeTimeout=0)
+
+
+def startArduino():
+    if arduino2.isOpen() == False:
+        arduino2.open()
+        arduino3.open()
 
 
 def rfid():
@@ -209,8 +215,10 @@ def bills():
         print("briefjes van 20 ", notes20)
         print("briefjes van 10 ", notes10)
         notes = f"{notes50}x 50,-, {notes20}x 20,-, {notes10}x 10,- [A]"
+        return True
     else:
         print("kan niet")
+        return False
 
 
 def balance():
@@ -410,3 +418,9 @@ def sendChoice(choice):
             writeOut(outputChoice)
 
         break
+
+
+def endArduino():
+    if arduino2.isOpen() == True:
+        arduino2.close()
+        arduino3.close()

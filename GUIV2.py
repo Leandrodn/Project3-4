@@ -1,7 +1,14 @@
+'''
+changelog tegenover v1: manier van het laden/switchen van frames
+'''
+
 import tkinter as tk
 import time
 import APIconnectV2 as API
 import threading
+import serial
+
+global arduino2
 
 
 class SampleApp(tk.Tk):
@@ -151,7 +158,7 @@ class SampleApp(tk.Tk):
             keypad = API.arduino2.read()
             keypad = keypad.decode()
             if keypad:
-                if keypad == 'A':
+                if keypad == 'A' and checkNotes:
                     check = API.withdraw()
                     if check == 0:
                         API.charityChoice = 0
@@ -161,7 +168,7 @@ class SampleApp(tk.Tk):
                     else:
                         self.switch_frame(PageEight)
                         return
-                if keypad == 'B':
+                if keypad == 'B' and (API.output[4:8] == 'ABNA' or API.output[4:8] == 'THOT'):
                     API.charityChoice = 1
                     API.charity()
                     self.switch_frame(PageSeven)
@@ -181,7 +188,7 @@ class SampleApp(tk.Tk):
             if keypad:
                 if keypad == 'A' and API.charityChoice == 0:
                     API.printReceipt()
-                    self.after(2000, lambda: self.switch_frame(PageEight))
+                    self.after(20000, lambda: self.switch_frame(PageEight))
                     return
                 if keypad == 'B':
                     self.switch_frame(PageEight)
@@ -192,7 +199,7 @@ class SampleApp(tk.Tk):
                 if keypad == 'D' and API.output[4:8] == 'ABNA' and API.charityChoice == 0:
                     API.digitalReceipt()
                     API.printReceipt()
-                    self.after(2000, lambda: self.switch_frame(PageEight))
+                    self.after(20000, lambda: self.switch_frame(PageEight))
                     return
                 if keypad == '*':
                     self.switch_frame(PageEight)
@@ -233,6 +240,8 @@ class StartPage(tk.Frame):
         self.bg_image = tk.PhotoImage(file='images/beginscherm.png')
         self.bg_label = tk.Label(self, image=self.bg_image)
         self.bg_label.place(x=0, y=0)
+        API.startArduino()
+
         self.x = threading.Thread(target=master.checkRFID)
         self.x.start()
 
@@ -397,16 +406,18 @@ class PageSix(tk.Frame):
         self.hs = tk.PhotoImage(file='images/homescreenknop.png')
         hsButton = tk.Button(self, image=self.hs, command=lambda: master.switch_frame(PageTwo), borderwidth=0)
 
-        API.bills()
+        global checkNotes
 
-        notesButton = tk.Button(self, text=API.notes, font="CenturyGothic 28 bold", command=None, borderwidth=5,
-                                bg='#009D96', fg='white', highlightbackground="white")
-        notesButton.place(x=1200, y=640)
-
-        charityButton1 = tk.Button(self, text="Donate to Diergaarde blijdorp [B]", font="CenturyGothic 22 bold",
-                                   command=None, borderwidth=5,
-                                   bg='#009D96', fg='white', highlightbackground="white")
-        charityButton1.place(x=1200, y=780)
+        checkNotes = API.bills()
+        if checkNotes:
+            notesButton = tk.Button(self, text=API.notes, font="CenturyGothic 28 bold", command=None, borderwidth=5,
+                                    bg='#009D96', fg='white', highlightbackground="white")
+            notesButton.place(x=1200, y=640)
+        if API.output[4:8] == 'ABNA' or API.output[4:8] == 'THOT':
+            charityButton1 = tk.Button(self, text="Donate to Diergaarde blijdorp [B]", font="CenturyGothic 22 bold",
+                                       command=None, borderwidth=5,
+                                       bg='#009D96', fg='white', highlightbackground="white")
+            charityButton1.place(x=1200, y=780)
 
         hsButton.place(x=80, y=640)
         abortButton.place(x=80, y=780)
@@ -469,7 +480,7 @@ class PageEight(tk.Frame):
         self.bg_image = tk.PhotoImage(file='images/Eindscherm.png')
         self.bg_label = tk.Label(self, image=self.bg_image)
         self.bg_label.place(x=0, y=0)
-
+        API.endArduino()
         self.x = threading.Thread(target=master.logout())
         self.x.start()
 
